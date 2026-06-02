@@ -1,0 +1,41 @@
+## /etc/alertmanager/alertmanager
+
+global:
+  resolve_timeout: 5m
+route:
+  group_by: ['alertname']
+  receiver: 'default-receiver'
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+ receivers:
+  - name: 'default-receiver'
+    email_configs:
+    - to: 'fatinkhan.97@gmail.com'
+      smarthost: localhost:25
+      headers:
+        Subject: '[ALERT] {{ .GroupLabels.alertname }}'
+        body: |
+          Alert: {{ .CommonLabels.alertname }}
+          Description: {{ range .Alerts .Alerts }}{{ .Annotations.summary }}{{ end }}
+
+
+## /etc/systemd/system/alertmanager.service
+
+[Unit]
+Description=Prometheus AlertManager 
+After=network.target
+
+[Service]
+Type=simple
+User=alertmanager
+Group=alertmanager
+ExecStart=/usr/local/bin/alertmanager \
+  --config.file=/etc/alertmanager/alertmanager.yml \
+  --storage.path=/var/lib/alertmanager/
+  --web.listen-address=0.0.0.0:9093
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
